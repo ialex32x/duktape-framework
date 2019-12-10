@@ -8,13 +8,14 @@ function greet() {
 }
 var MyBridge = /** @class */ (function () {
     function MyBridge() {
+        this._clickcount = 0;
     }
     MyBridge.prototype.Awake = function () {
         GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Cube);
     };
     MyBridge.prototype.Update = function (deltaTime) {
         if (Input.GetKeyUp(KeyCode.Space) || Input.GetMouseButtonUp(0)) {
-            console.log("key pressed!");
+            console.log("key pressed!", this._clickcount++);
             greet();
         }
     };

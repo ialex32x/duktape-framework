@@ -1,0 +1,35 @@
+{
+    "compilerOptions": {
+        "newLine": "CRLF",
+        "module": "commonjs",
+        "target": "es5",
+        "sourceRoot": "",
+        "outDir": "Assets/Scripts/out",
+        "typeRoots": [
+            "Assets/Duktape/Typings",
+            "Assets/Generated",
+            "Assets/Scripts/types"
+        ],
+        "moduleResolution": "node",
+        "types": [
+            "node"
+        ],
+        // "listEmittedFiles": true,
+        "experimentalDecorators": true,
+        "noImplicitAny": false,
+        // "strictNullChecks": true,
+        "allowJs": true,
+        "inlineSourceMap": false,
+        "sourceMap": true
+    },
+    "compileOnSave": true,
+    "include": [
+        "Assets/Duktape/Typings/**/*.ts",
+        "Assets/Generated/**/*.ts",
+        "Assets/Scripts/types/**/*.ts", 
+        "Assets/Scripts/src/**/*.ts"
+    ],
+    "exclude": [
+        "Assets/Scripts/out/**/*"
+    ]
+}

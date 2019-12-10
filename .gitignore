@@ -1,0 +1,25 @@
+# Assets/StreamingAssets/AssetBundles/
+# Assets/StreamingAssets/AssetBundles.meta
+/Assets/Generated
+/Assets/Generated.meta
+
+# AssetBundles/
+/Library/
+/obj/
+/Temp/
+/Logs/
+.vs/
+/*.csproj
+/*.sln
+/*.userprefs
+
+UpgradeLog.htm
+*.VC.VC.opendb
+*.VC.db
+*.pyc
+~$*.*
+*.beam
+
+node_modules
+# /.vscode/launch.json
+

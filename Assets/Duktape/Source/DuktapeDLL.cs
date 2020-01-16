@@ -102,10 +102,10 @@ namespace Duktape
 
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int duk_c_function(IntPtr ctx);
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate IntPtr duk_alloc_function(IntPtr udata, int size);
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate IntPtr duk_realloc_function(IntPtr udata, IntPtr ptr, int size);
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void duk_free_function(IntPtr udata, IntPtr ptr);
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void duk_fatal_function(IntPtr udata, string msg);
+        // [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate IntPtr duk_alloc_function(IntPtr udata, int size);
+        // [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate IntPtr duk_realloc_function(IntPtr udata, IntPtr ptr, int size);
+        // [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void duk_free_function(IntPtr udata, IntPtr ptr);
+        // [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void duk_fatal_function(IntPtr udata, string msg);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void duk_decode_char_function(IntPtr udata, duk_codepoint_t codepoint);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate duk_codepoint_t duk_map_char_function(IntPtr udata, duk_codepoint_t codepoint);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate duk_ret_t duk_safe_call_function(IntPtr ctx, IntPtr udata);
@@ -119,10 +119,10 @@ namespace Duktape
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void duk_unity_debug_detached_function(IntPtr ctx, duk_int_t udata);
 #else
 	    public delegate int duk_c_function(IntPtr ctx);
-        public delegate IntPtr duk_alloc_function(IntPtr udata, int size);
-        public delegate IntPtr duk_realloc_function(IntPtr udata, IntPtr ptr, int size);
-        public delegate void duk_free_function(IntPtr udata, IntPtr ptr);
-        public delegate void duk_fatal_function(IntPtr udata, string msg);
+        // public delegate IntPtr duk_alloc_function(IntPtr udata, int size);
+        // public delegate IntPtr duk_realloc_function(IntPtr udata, IntPtr ptr, int size);
+        // public delegate void duk_free_function(IntPtr udata, IntPtr ptr);
+        // public delegate void duk_fatal_function(IntPtr udata, string msg);
         public delegate void duk_decode_char_function(IntPtr udata, duk_codepoint_t codepoint);
         public delegate duk_codepoint_t duk_map_char_function(IntPtr udata, duk_codepoint_t codepoint);
         public delegate duk_ret_t duk_safe_call_function(IntPtr ctx, IntPtr udata);
@@ -316,31 +316,61 @@ namespace Duktape
 
         #endregion
 
+        // temp code
+#if UNITY_EDITOR_WIN
+        [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void duk_unity_get_memory_state(IntPtr thr, out duk_uint_t malloc_count, out duk_uint_t malloc_size);
+
+        [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr duk_unity_create_heap();
+
+        [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void duk_unity_destroy_heap(IntPtr ctx);
+#else
+        public static void duk_unity_get_memory_state(IntPtr thr, out duk_uint_t malloc_count, out duk_uint_t malloc_size)
+        {
+            malloc_size=malloc_count=0;
+        }
+#endif
+
         [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr duk_create_heap(IntPtr allocFunc, IntPtr reallocFunc, IntPtr freeFunc, IntPtr heapUdata, IntPtr fatalFunc);
 
+        [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void duk_destroy_heap(IntPtr ctx);
+
         public static IntPtr duk_create_heap_default()
         {
+#if UNITY_EDITOR_WIN // temp code
+            return duk_unity_create_heap();
+#else
             return duk_create_heap(IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+#endif
         }
 
-        public static IntPtr duk_create_heap(duk_alloc_function allocFunc, duk_realloc_function reallocFunc, duk_free_function freeFunc, IntPtr heapUdata, duk_fatal_function fatalFunc)
+        public static void duk_destroy_heap_default(IntPtr ctx)
         {
-            var alloc_ptr = Marshal.GetFunctionPointerForDelegate(allocFunc);
-            var realloc_ptr = Marshal.GetFunctionPointerForDelegate(reallocFunc);
-            var free_ptr = Marshal.GetFunctionPointerForDelegate(freeFunc);
-            var fatal_ptr = Marshal.GetFunctionPointerForDelegate(fatalFunc);
-            return duk_create_heap(alloc_ptr, realloc_ptr, free_ptr, heapUdata, fatal_ptr);
+#if UNITY_EDITOR_WIN // temp code
+            duk_unity_destroy_heap(ctx);
+#else
+            duk_destroy_heap(ctx);
+#endif
         }
+
+        // public static IntPtr duk_create_heap(duk_alloc_function allocFunc, duk_realloc_function reallocFunc, duk_free_function freeFunc, IntPtr heapUdata, duk_fatal_function fatalFunc)
+        // {
+        //     var alloc_ptr = Marshal.GetFunctionPointerForDelegate(allocFunc);
+        //     var realloc_ptr = Marshal.GetFunctionPointerForDelegate(reallocFunc);
+        //     var free_ptr = Marshal.GetFunctionPointerForDelegate(freeFunc);
+        //     var fatal_ptr = Marshal.GetFunctionPointerForDelegate(fatalFunc);
+        //     return duk_create_heap(alloc_ptr, realloc_ptr, free_ptr, heapUdata, fatal_ptr);
+        // }
 
         [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern void duk_suspend(IntPtr ctx, IntPtr state);
 
         [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern void duk_resume(IntPtr ctx, IntPtr state);
-
-        [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void duk_destroy_heap(IntPtr ctx);
 
         /*
         *  Memory management
@@ -1750,6 +1780,20 @@ namespace Duktape
         public static extern duk_bool_t duk_unity_put_target_i(IntPtr ctx, duk_idx_t idx);
 
         [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
+        public static extern duk_bool_t duk_unity_get_refid(IntPtr ctx, duk_idx_t idx, out duk_int_t refid);
+        [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
+        public static extern duk_bool_t duk_unity_set_refid(IntPtr ctx, duk_idx_t idx, duk_int_t refid);
+        [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
+        public static extern duk_bool_t duk_unity_get_weak_refid(IntPtr ctx, duk_idx_t idx, out duk_int_t refid);
+        [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
+        public static extern duk_bool_t duk_unity_set_weak_refid(IntPtr ctx, duk_idx_t idx, duk_int_t refid);
+
+        [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
+        public static extern duk_bool_t duk_unity_get_type_refid(IntPtr ctx, duk_idx_t idx, out duk_uint_t refid);
+        [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
+        public static extern duk_bool_t duk_unity_set_type_refid(IntPtr ctx, duk_idx_t idx, duk_uint_t refid);
+
+        [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern duk_uint_t duk_unity_open(IntPtr ctx); // 初始化附加内容 (比如ref/unref的使用)
 
         [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
@@ -1784,7 +1828,7 @@ namespace Duktape
         [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern void duk_unity_detach_debugger(IntPtr ctx, IntPtr debugger);
 
-        
+
         /// debugger support
         [DllImport(DUKTAPEDLL, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr duk_example_attach_debugger(IntPtr ctx);

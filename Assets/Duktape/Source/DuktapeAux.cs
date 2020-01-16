@@ -215,7 +215,19 @@ namespace Duktape
 
         private static string duk_get_stacktrace(IntPtr ctx)
         {
-            var stacktrace = "stacktrace:\n";
+            var stacktrace = "\n";
+            uint malloc_count = 0;
+            uint malloc_size = 0;
+            var vm = DuktapeVM.GetVM(ctx);
+            if (vm != null)
+            {
+                vm.GetMemoryState(out malloc_count, out malloc_size);
+                if (malloc_count != 0)
+                {
+                    stacktrace += $"allocations: {malloc_count} [{malloc_size}]\n";
+                }
+            }
+            stacktrace += "stacktrace:\n";
             for (int i = -2; ; i--)
             {
                 DuktapeDLL.duk_inspect_callstack_entry(ctx, i);
@@ -278,6 +290,7 @@ namespace Duktape
             return 0;
         }
 
+        [AOT.MonoPInvokeCallback(typeof(DuktapeDLL.duk_c_function))]
         public static int duk_enableStacktrace(IntPtr ctx)
         {
             printStacktrace = DuktapeDLL.duk_require_boolean(ctx, 0);

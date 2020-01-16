@@ -13,21 +13,13 @@ namespace Duktape
 
         private DuktapeVM _vm;
 
-        public void OnBinded(DuktapeVM vm, int numRegs)
-        {
-        }
+        public void OnBinded(DuktapeVM vm, int numRegs) { }
 
-        public void OnBindingError(DuktapeVM vm, Type type)
-        {
-        }
+        public void OnBindingError(DuktapeVM vm, Type type) { }
 
-        public void OnProgress(DuktapeVM vm, int step, int total)
-        {
-        }
+        public void OnProgress(DuktapeVM vm, int step, int total) { }
 
-        public void OnTypesBinding(DuktapeVM vm)
-        {
-        }
+        public void OnTypesBinding(DuktapeVM vm) { }
 
         public void OnLoaded(DuktapeVM vm)
         {

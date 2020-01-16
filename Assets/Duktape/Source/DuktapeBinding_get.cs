@@ -545,7 +545,7 @@ namespace Duktape
         where T : class
         {
             object o_t;
-            var ret = duk_get_object(ctx, idx, out o_t);
+            var ret = duk_get_cached_object(ctx, idx, out o_t);
             o = o_t as T;
             if (o_t != null && o == null)
             {
@@ -601,37 +601,52 @@ namespace Duktape
 
         public static bool duk_get_cached_object(IntPtr ctx, int idx, out object o)
         {
-            if (DuktapeDLL.duk_get_prop_string(ctx, idx, DuktapeVM.OBJ_PROP_NATIVE))
+            int id;
+            if (DuktapeDLL.duk_unity_get_refid(ctx, idx, out id))
             {
-                var id = DuktapeDLL.duk_get_int(ctx, -1);
-                DuktapeDLL.duk_pop(ctx);
                 return DuktapeVM.GetObjectCache(ctx).TryGetObject(id, out o);
             }
-            else
-            {
-                DuktapeDLL.duk_pop(ctx);
-            }
+            //TODO: if o is Delegate, try get from delegate cache list
             o = null;
             return false;
         }
 
         public static bool duk_get_object(IntPtr ctx, int idx, out object o)
         {
-            if (DuktapeDLL.duk_is_null_or_undefined(ctx, idx)) // or check for object?
-            {
-                o = null;
-                return true;
-            }
             var jstype = DuktapeDLL.duk_get_type(ctx, idx);
-            switch (jstype)
+            if (jstype == duk_type_t.DUK_TYPE_OBJECT)
             {
-                case duk_type_t.DUK_TYPE_STRING:
-                    o = DuktapeDLL.duk_get_string(ctx, idx);
-                    return true;
-                default: break;
+                return duk_get_cached_object(ctx, idx, out o);
             }
-            return duk_get_cached_object(ctx, idx, out o);
+            // Debug.LogFormat("duk_get_object({0})", jstype);
+            //     case duk_type_t.DUK_TYPE_STRING:
+            //         o = DuktapeDLL.duk_get_string(ctx, idx);
+            //         return true;
+            //     default: break;
+            // }
+            // 其他类型不存在对象映射
+            o = null;
+            return false;
         }
+
+        // public static bool duk_get_object(IntPtr ctx, int idx, out object o)
+        // {
+        //     if (DuktapeDLL.duk_is_null_or_undefined(ctx, idx)) // or check for object?
+        //     {
+        //         o = null;
+        //         return true;
+        //     }
+        //     var jstype = DuktapeDLL.duk_get_type(ctx, idx);
+        //     Debug.LogFormat("duk_get_object({0})", jstype);
+        //     switch (jstype)
+        //     {
+        //         case duk_type_t.DUK_TYPE_STRING:
+        //             o = DuktapeDLL.duk_get_string(ctx, idx);
+        //             return true;
+        //         default: break;
+        //     }
+        //     return duk_get_cached_object(ctx, idx, out o);
+        // }
 
         public static bool duk_get_classvalue_array<T>(IntPtr ctx, int idx, out T[] o)
         where T : class

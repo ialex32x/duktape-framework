@@ -12,13 +12,10 @@ var MyBridge = /** @class */ (function () {
     }
     MyBridge.prototype.Awake = function () {
         GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Cube);
-        UnityFS.ResourceManager.LoadAsset("Assets/Data/Prefabs/Cube.prefab", function (asset) {
-            var obj = asset.GetObject();
-            var inst = UnityEngine.Object.Instantiate(obj);
-            setTimeout(function () {
-                UnityEngine.Object.Destroy(inst);
-            }, 1000 * 10);
-        });
+        var cube = UnityFS.Utils.PrefabLoader.Load("Assets/Data/Prefabs/Cube.prefab");
+        setTimeout(function () {
+            UnityEngine.Object.Destroy(cube.gameObject);
+        }, 1000 * 10);
     };
     MyBridge.prototype.Update = function (deltaTime) {
         if (Input.GetKeyUp(KeyCode.Space) || Input.GetMouseButtonUp(0)) {

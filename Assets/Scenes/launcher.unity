@@ -152,7 +152,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   debuggerSupport: 1
+  scriptRootPath: Assets/Scripts/out
   entryScript: main
+  devMode: 1
 --- !u!81 &513314953
 AudioListener:
   m_ObjectHideFlags: 0

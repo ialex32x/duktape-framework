@@ -11,6 +11,14 @@ export class MyBridge {
 
     Awake() {
         GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Cube);
+        UnityFS.ResourceManager.LoadAsset("Assets/Data/Prefabs/Cube.prefab", (asset: UnityFS.UAsset) => {
+            let obj = asset.GetObject();
+            let inst = UnityEngine.Object.Instantiate(obj);
+
+            setTimeout(function () {
+                UnityEngine.Object.Destroy(inst);
+            }, 1000 * 10);
+        });
     }
 
     Update(deltaTime: number) {

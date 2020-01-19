@@ -31,6 +31,7 @@ namespace Duktape
 
         private Dictionary<Type, List<string>> _tsTypeNameMap = new Dictionary<Type, List<string>>();
         private Dictionary<Type, string> _csTypeNameMap = new Dictionary<Type, string>();
+        private Dictionary<Type, string> _csTypePusherMap = new Dictionary<Type, string>();
         private Dictionary<string, string> _csTypeNameMapS = new Dictionary<string, string>();
         private static HashSet<string> _tsKeywords = new HashSet<string>();
 
@@ -232,6 +233,20 @@ namespace Duktape
             AddCSTypeNameMap(typeof(System.Object), "object");
             AddCSTypeNameMap(typeof(void), "void");
 
+            AddCSTypePusherMap(typeof(bool), "DuktapeDLL.duk_push_boolean");
+            AddCSTypePusherMap(typeof(char), "DuktapeDLL.duk_push_int");
+            AddCSTypePusherMap(typeof(byte), "DuktapeDLL.duk_push_int");
+            AddCSTypePusherMap(typeof(sbyte), "DuktapeDLL.duk_push_int");
+            AddCSTypePusherMap(typeof(short), "DuktapeDLL.duk_push_int");
+            AddCSTypePusherMap(typeof(ushort), "DuktapeDLL.duk_push_int");
+            AddCSTypePusherMap(typeof(int), "DuktapeDLL.duk_push_int");
+            AddCSTypePusherMap(typeof(uint), "DuktapeDLL.duk_push_uint");
+            AddCSTypePusherMap(typeof(long), "DuktapeDLL.duk_push_number");
+            AddCSTypePusherMap(typeof(ulong), "DuktapeDLL.duk_push_number");
+            AddCSTypePusherMap(typeof(float), "DuktapeDLL.duk_push_number");
+            AddCSTypePusherMap(typeof(double), "DuktapeDLL.duk_push_number");
+            AddCSTypePusherMap(typeof(string), "DuktapeDLL.duk_push_string");
+
             Initialize();
         }
 
@@ -342,32 +357,49 @@ namespace Duktape
             _csTypeNameMapS[GetCSNamespace(type) + type.Name] = name;
         }
 
+        public void AddCSTypePusherMap(Type type, string name)
+        {
+            _csTypePusherMap[type] = name;
+        }
+
         // 增加导出类型 (需要在 Collect 阶段进行)
         //NOTE: editor mscorlib 与 runtime 存在差异, 需要手工 block 差异
-        public TypeTransform AddExportedType(Type type)
+        public TypeTransform AddExportedType(Type type, bool importBaseType = false)
         {
             if (type.IsGenericTypeDefinition)
             {
                 whitelist.Add(type);
                 return null;
             }
+            var tt = TransformType(type);
             if (!exportedTypes.ContainsKey(type))
             {
                 var typeBindingInfo = new TypeBindingInfo(this, type);
                 exportedTypes.Add(type, typeBindingInfo);
                 log.AppendLine($"AddExportedType: {type} Assembly: {type.Assembly}");
 
-                // 检查具体化泛型基类 (如果基类泛型定义在显式导出清单中, 那么导出此具体化类)
                 var baseType = type.BaseType;
-                if (baseType != null && baseType.IsConstructedGenericType)
+                if (baseType != null && !IsExportingBlocked(baseType))
                 {
-                    if (!IsExportingBlocked(baseType) && IsExportingExplicit(baseType.GetGenericTypeDefinition()))
+                    // 检查具体化泛型基类 (如果基类泛型定义在显式导出清单中, 那么导出此具体化类)
+                    // Debug.LogFormat("{0} IsConstructedGenericType:{1} {2} {3}", type, type.IsConstructedGenericType, type.IsGenericType, importBaseType);
+                    if (baseType.IsConstructedGenericType)
                     {
-                        AddExportedType(baseType);
+                        if (IsExportingExplicit(baseType.GetGenericTypeDefinition()))
+                        {
+                            AddExportedType(baseType);
+                        }
+                    }
+                    else if (!baseType.IsGenericType)
+                    {
+                        if (importBaseType)
+                        {
+                            AddExportedType(baseType, importBaseType);
+                        }
                     }
                 }
             }
-            return TransformType(type);
+            return tt;
         }
 
         public bool RemoveExportedType(Type type)
@@ -574,7 +606,67 @@ namespace Duktape
             return $"DuktapeDLL.duk_generic_error(ctx, \"{err}\");";
         }
 
-        public string GetDuktapeGetter(Type type)
+        public string GetDuktapeGetter(Type type, string ctx, string index, string varname)
+        {
+            #region [临时做法] 并且是可选的优化, 可以避免一层函数调用
+            if (type == typeof(bool))
+            {
+                return $"{varname} = DuktapeDLL.duk_get_boolean({ctx}, {index});";
+            }
+            if (type == typeof(string))
+            {
+                return $"{varname} = DuktapeDLL.duk_get_string({ctx}, {index});";
+            }
+            if (type == typeof(byte))
+            {
+                return $"{varname} = (byte)DuktapeDLL.duk_get_int({ctx}, {index});";
+            }
+            if (type == typeof(char))
+            {
+                return $"{varname} = (char)DuktapeDLL.duk_get_int({ctx}, {index});";
+            }
+            if (type == typeof(sbyte))
+            {
+                return $"{varname} = (sbyte)DuktapeDLL.duk_get_int({ctx}, {index});";
+            }
+            if (type == typeof(short))
+            {
+                return $"{varname} = (short)DuktapeDLL.duk_get_int({ctx}, {index});";
+            }
+            if (type == typeof(ushort))
+            {
+                return $"{varname} = (ushort)DuktapeDLL.duk_get_int({ctx}, {index});";
+            }
+            if (type == typeof(int))
+            {
+                return $"{varname} = DuktapeDLL.duk_get_int({ctx}, {index});";
+            }
+            if (type == typeof(uint))
+            {
+                return $"{varname} = DuktapeDLL.duk_get_uint({ctx}, {index});";
+            }
+            if (type == typeof(long))
+            {
+                return $"{varname} = (long)DuktapeDLL.duk_get_number({ctx}, {index});";
+            }
+            if (type == typeof(ulong))
+            {
+                return $"{varname} = (ulong)DuktapeDLL.duk_get_number({ctx}, {index});";
+            }
+            if (type == typeof(float))
+            {
+                return $"{varname} = (float)DuktapeDLL.duk_get_number({ctx}, {index});";
+            }
+            if (type == typeof(double))
+            {
+                return $"{varname} = DuktapeDLL.duk_get_number({ctx}, {index});";
+            }
+            #endregion 
+            var getter = GetDuktapeGetter(type);
+            return $"{getter}({ctx}, {index}, out {varname});";
+        }
+
+        private string GetDuktapeGetter(Type type)
         {
             if (type.IsByRef)
             {
@@ -617,6 +709,11 @@ namespace Duktape
             if (type.IsByRef)
             {
                 return GetDuktapePusher(type.GetElementType());
+            }
+            string pusher;
+            if (_csTypePusherMap.TryGetValue(type, out pusher))
+            {
+                return pusher;
             }
             if (type.BaseType == typeof(MulticastDelegate))
             {
@@ -929,6 +1026,22 @@ namespace Duktape
             }
         }
 
+        private void OnPreExporting()
+        {
+            for (int i = 0, size = _bindingProcess.Count; i < size; i++)
+            {
+                var bp = _bindingProcess[i];
+                try
+                {
+                    bp.OnPreExporting(this);
+                }
+                catch (Exception exception)
+                {
+                    this.Error($"process failed [{bp}][OnPreExporting]: {exception}");
+                }
+            }
+        }
+
         private void OnPreCollectTypes()
         {
             for (int i = 0, size = _bindingProcess.Count; i < size; i++)
@@ -1060,6 +1173,7 @@ namespace Duktape
             }
             OnPostCollectAssemblies();
 
+            OnPreExporting();
             ExportAssemblies(_explicitAssemblies, false);
             ExportAssemblies(_implicitAssemblies, true);
             ExportBuiltins();
@@ -1131,6 +1245,7 @@ namespace Duktape
             AddExportedType(typeof(Array));
             AddExportedType(typeof(Object));
             AddExportedType(typeof(Vector3));
+            AddExportedType(typeof(DuktapeBridge));
         }
 
         // implicitExport: 默认进行导出(黑名单例外), 否则根据导出标记或手工添加

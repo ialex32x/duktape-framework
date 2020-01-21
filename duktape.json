@@ -8,11 +8,11 @@
     // auto, cr, lf, crlf
     "newLineStyle": "auto",
     "implicitAssemblies": [
-        "UnityEngine",
-        "UnityEngine.CoreModule", 
-        "UnityEngine.InputLegacyModule", // if unity2019.2+
-        "UnityEngine.UI", 
-        "UnityEngine.UIModule"
+        // "UnityEngine",
+        // "UnityEngine.CoreModule", 
+        // "UnityEngine.InputLegacyModule", // if unity2019.2+
+        // "UnityEngine.UI", 
+        // "UnityEngine.UIModule"
     ], 
     "explicitAssemblies": [
         "Assembly-CSharp"

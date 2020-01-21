@@ -1,28 +1,30 @@
 import Input = UnityEngine.Input;
 import KeyCode = UnityEngine.KeyCode;
 import GameObject = UnityEngine.GameObject;
+import { IGame } from "./game/common/game";
 
-function greet() {
-    console.log("good day!");
-}
+let GameDefs = {
+    shot: "./game/shot/shot_game", 
+};
 
 export class MyBridge {
-    private _clickcount = 0;
+    private _game: IGame
 
     Awake() {
-        GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Cube);
-        let cube = UnityFS.Utils.PrefabLoader.Load("Assets/Data/Prefabs/Cube.prefab");
+        // GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Cube);
+        // let cube = UnityFS.Utils.PrefabLoader.Load("Assets/Data/Prefabs/Cube.prefab");
 
-        setTimeout(function () {
-            UnityEngine.Object.Destroy(cube.gameObject);
-        }, 1000 * 10);
+        // setTimeout(function () {
+        //     UnityEngine.Object.Destroy(cube.gameObject);
+        // }, 1000 * 10);
+        let proto = require(GameDefs["shot"]);
+        this._game = new proto.default();
+        this._game.init();
+        this._game.restart();
     }
 
     Update(deltaTime: number) {
-        if (Input.GetKeyUp(KeyCode.Space) || Input.GetMouseButtonUp(0)) {
-            console.log("key pressed!", this._clickcount++);
-            greet();
-        }
+        this._game.update(deltaTime);
     }
 
     OnApplicationQuit() {

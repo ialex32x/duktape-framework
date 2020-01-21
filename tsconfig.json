@@ -17,6 +17,7 @@
         // "listEmittedFiles": true,
         "experimentalDecorators": true,
         "noImplicitAny": false,
+        "skipLibCheck": true,
         // "strictNullChecks": true,
         "allowJs": true,
         "inlineSourceMap": false,

@@ -1,7 +1,9 @@
-import { Vec2 } from "../../base/vec2";
+
 import Transform = UnityEngine.Transform;
 import GameObject = UnityEngine.GameObject;
 import UObject = UnityEngine.Object;
+
+import { Vec2 } from "../../base/vec2";
 
 export class ShotBullet {
     private _position: Vec2;

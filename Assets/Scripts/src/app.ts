@@ -11,12 +11,6 @@ export class MyBridge {
     private _game: IGame
 
     Awake() {
-        // GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Cube);
-        // let cube = UnityFS.Utils.PrefabLoader.Load("Assets/Data/Prefabs/Cube.prefab");
-
-        // setTimeout(function () {
-        //     UnityEngine.Object.Destroy(cube.gameObject);
-        // }, 1000 * 10);
         let proto = require(GameDefs["shot"]);
         this._game = new proto.default();
         this._game.init(() => {

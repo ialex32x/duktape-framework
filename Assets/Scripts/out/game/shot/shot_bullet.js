@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var vec2_1 = require("../../base/vec2");
 var GameObject = UnityEngine.GameObject;
 var UObject = UnityEngine.Object;
+var vec2_1 = require("../../base/vec2");
 var ShotBullet = /** @class */ (function () {
     function ShotBullet() {
         this._active = false;

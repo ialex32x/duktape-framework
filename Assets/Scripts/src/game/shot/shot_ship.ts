@@ -1,22 +1,25 @@
-import { Vec2 } from "../../base/vec2";
+
 import Transform = UnityEngine.Transform;
 import GameObject = UnityEngine.GameObject;
 import UObject = UnityEngine.Object;
 import Input = UnityEngine.Input;
 import KeyCode = UnityEngine.KeyCode;
+
+import { Vec2 } from "../../base/vec2";
 import ShotGame from "./shot_game";
 
 export class ShotShip {
     private _position = Vec2.zero;
     private _speed = Vec2.zero;
     private _scalarSpeed = 10;
-    private _halfExt = new UnityEngine.Vector3(0.5, 0.5, 0.5);
+    private _halfExt = new UnityEngine.Vector3(0.75, 0.75, 0.75);
     private _lifetime = 0;
     private _alive: boolean;
 
     private _gameObject: GameObject;
     private _transform: Transform;
     private _game: ShotGame;
+    private _loader: UnityFS.Utils.PrefabLoader;
 
     get poistion() {
         return this._position;
@@ -32,12 +35,10 @@ export class ShotShip {
 
     init(game: ShotGame) {
         this._game = game;
-        this._gameObject = GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Cube);
-        let co = this._gameObject.GetComponent(UnityEngine.BoxCollider);
-        UnityEngine.Object.DestroyImmediate(co);
-        co = null;
+        this._loader = UnityFS.Utils.PrefabLoader.Load("Assets/Data/Prefabs/ship.prefab");
+        this._gameObject = this._loader.gameObject;
         this._transform = this._gameObject.transform;
-        this._transform.localScale = new UnityEngine.Vector3(2, 2, 2);
+        this._transform.localScale = new UnityEngine.Vector3(4.5, 4.5, 4.5);
     }
 
     restart() {

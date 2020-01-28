@@ -1,16 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var vec2_1 = require("../../base/vec2");
-var GameObject = UnityEngine.GameObject;
 var UObject = UnityEngine.Object;
 var Input = UnityEngine.Input;
 var KeyCode = UnityEngine.KeyCode;
+var vec2_1 = require("../../base/vec2");
 var ShotShip = /** @class */ (function () {
     function ShotShip() {
         this._position = vec2_1.Vec2.zero;
         this._speed = vec2_1.Vec2.zero;
         this._scalarSpeed = 10;
-        this._halfExt = new UnityEngine.Vector3(0.5, 0.5, 0.5);
+        this._halfExt = new UnityEngine.Vector3(0.75, 0.75, 0.75);
         this._lifetime = 0;
     }
     Object.defineProperty(ShotShip.prototype, "poistion", {
@@ -36,12 +35,10 @@ var ShotShip = /** @class */ (function () {
     });
     ShotShip.prototype.init = function (game) {
         this._game = game;
-        this._gameObject = GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Cube);
-        var co = this._gameObject.GetComponent(UnityEngine.BoxCollider);
-        UnityEngine.Object.DestroyImmediate(co);
-        co = null;
+        this._loader = UnityFS.Utils.PrefabLoader.Load("Assets/Data/Prefabs/ship.prefab");
+        this._gameObject = this._loader.gameObject;
         this._transform = this._gameObject.transform;
-        this._transform.localScale = new UnityEngine.Vector3(2, 2, 2);
+        this._transform.localScale = new UnityEngine.Vector3(4.5, 4.5, 4.5);
     };
     ShotShip.prototype.restart = function () {
         this._position.zero();

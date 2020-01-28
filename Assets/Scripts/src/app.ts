@@ -19,8 +19,9 @@ export class MyBridge {
         // }, 1000 * 10);
         let proto = require(GameDefs["shot"]);
         this._game = new proto.default();
-        this._game.init();
-        this._game.restart();
+        this._game.init(() => {
+            this._game.restart();
+        });
     }
 
     Update(deltaTime: number) {

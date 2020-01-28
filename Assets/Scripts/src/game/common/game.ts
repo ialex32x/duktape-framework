@@ -1,6 +1,6 @@
 
 export interface IGame {
-    init();
+    init(onfinish: () => void);
     restart();
     update(dt: number);
     destroy();

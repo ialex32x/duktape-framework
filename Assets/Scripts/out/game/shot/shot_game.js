@@ -1,11 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var Input = UnityEngine.Input;
+var KeyCode = UnityEngine.KeyCode;
 var shot_ship_1 = require("./shot_ship");
 var shot_bullet_1 = require("./shot_bullet");
 var vec2_1 = require("../../base/vec2");
 var random_1 = require("../../base/random");
-var default_1 = /** @class */ (function () {
-    function default_1() {
+var ShotGame = /** @class */ (function () {
+    function ShotGame() {
         this._bullets = [];
         this._bulletCountMax = 100;
         this._inactive = [];
@@ -23,24 +25,34 @@ var default_1 = /** @class */ (function () {
         this._xMax = 0;
         this._yMax = 0;
     }
-    default_1.prototype.init = function () {
+    ShotGame.prototype.init = function (onfinish) {
         var _this = this;
+        this._hint = UnityEngine.GameObject.Find("/hint");
+        this._hint.SetActive(false);
         this._xMin = -50;
         this._yMin = -50;
         this._xMax = 50;
         this._yMax = 50;
-        this._bulletInterval = 2;
+        this._bulletInterval = 0.25;
         this._posEmitter[0] = function () { return new vec2_1.Vec2(_this._rng.rangeDouble(_this._xMin, _this._xMax), _this._yMin); };
         this._posEmitter[2] = function () { return new vec2_1.Vec2(_this._rng.rangeDouble(_this._xMin, _this._xMax), _this._yMax); };
         this._posEmitter[1] = function () { return new vec2_1.Vec2(_this._xMin, _this._rng.rangeDouble(_this._yMin, _this._yMax)); };
         this._posEmitter[3] = function () { return new vec2_1.Vec2(_this._xMax, _this._rng.rangeDouble(_this._yMin, _this._yMax)); };
         this._ship = new shot_ship_1.ShotShip();
-        this._ship.init();
+        this._ship.init(this);
+        this._solidMatAsset = UnityFS.ResourceManager.LoadAsset("Assets/Data/Materials/solid.mat", UnityEngine.Material);
+        this._solidMatAsset.completed.on(function (self) {
+            // console.log("solid mat loaded", self.GetObject());
+            onfinish();
+        });
     };
-    default_1.prototype.contains = function (pos) {
+    ShotGame.prototype.contains = function (pos) {
         return pos.x >= this._xMin && pos.x <= this._xMax && pos.y >= this._yMin && pos.y <= this._yMax;
     };
-    default_1.prototype.shot = function (n) {
+    ShotGame.prototype.movable = function (x, y) {
+        return x >= (this._xMin + 5) && x <= (this._xMax - 5) && y >= (this._yMin + 5) && y <= (this._yMax - 5);
+    };
+    ShotGame.prototype.shot = function (n) {
         while (n-- > 0) {
             var b = this.createBullet();
             if (!b) {
@@ -52,14 +64,14 @@ var default_1 = /** @class */ (function () {
             var p1 = this._posEmitter[edge]();
             var p2 = this._ship.poistion;
             if (this._bulletIndex >= this._nextMegaBullet) {
-                sv *= 1.25;
-                this._nextMegaBullet += 20;
+                sv *= 1.85;
+                this._nextMegaBullet += 12;
             }
             var s = vec2_1.Vec2.sub(p2, p1).normalize().mul(sv);
             b.restart(p1, s);
         }
     };
-    default_1.prototype.createBullet = function () {
+    ShotGame.prototype.createBullet = function () {
         var n = this._inactive.length;
         if (this._bullets.length - n > this._bulletCountMax) {
             return null;
@@ -68,7 +80,7 @@ var default_1 = /** @class */ (function () {
         if (n == 0) {
             b = new shot_bullet_1.ShotBullet();
             this._bullets.push(b);
-            b.init();
+            b.init(this._solidMatAsset.GetObject());
         }
         else {
             var f = this._inactive.splice(n - 1)[0];
@@ -76,27 +88,40 @@ var default_1 = /** @class */ (function () {
         }
         return b;
     };
-    default_1.prototype.update = function (dt) {
-        this._time += dt;
-        var bulletCount = this._bullets.length;
-        for (var i = 0; i < bulletCount; i++) {
-            var bullet = this._bullets[i];
-            if (bullet.actived) {
-                bullet.update(dt);
-                if (!this.contains(bullet.position)) {
-                    bullet.deactivate();
-                    this._inactive.push(i);
+    ShotGame.prototype.update = function (dt) {
+        if (this._ship.alive) {
+            this._time += dt;
+            var bulletCount = this._bullets.length;
+            for (var i = 0; i < bulletCount; i++) {
+                var bullet = this._bullets[i];
+                if (bullet.actived) {
+                    bullet.update(dt);
+                    if (!this.contains(bullet.position)) {
+                        bullet.deactivate();
+                        this._inactive.push(i);
+                    }
                 }
             }
+            this._ship.update(dt);
+            this._bulletTime += dt;
+            while (this._bulletTime >= this._bulletInterval) {
+                this._bulletTime -= this._bulletInterval;
+                this.shot(2);
+            }
+            if (!this._ship.alive) {
+                this._hint.SetActive(true);
+                var text = this._hint.GetComponent(UnityEngine.TextMesh);
+                text.text = "<b><color=red>Time: " + this._ship.lifetime.toFixed(2) + "</color></b>\n[Space] to restart.";
+            }
         }
-        this._ship.update(dt);
-        this._bulletTime += dt;
-        while (this._bulletTime >= this._bulletInterval) {
-            this._bulletTime -= this._bulletInterval;
-            this.shot(2);
+        else {
+            if (Input.GetKey(KeyCode.Space)) {
+                this.restart();
+            }
         }
     };
-    default_1.prototype.restart = function () {
+    ShotGame.prototype.restart = function () {
+        this._hint.SetActive(false);
         var bulletCount = this._bullets.length;
         for (var i = 0; i < bulletCount; i++) {
             var bullet = this._bullets[i];
@@ -105,9 +130,10 @@ var default_1 = /** @class */ (function () {
                 this._inactive.push(i);
             }
         }
+        this.shot(20);
         this._ship.restart();
     };
-    default_1.prototype.destroy = function () {
+    ShotGame.prototype.destroy = function () {
         var bulletCount = this._bullets.length;
         for (var i = 0; i < bulletCount; i++) {
             var bullet = this._bullets[i];
@@ -116,8 +142,10 @@ var default_1 = /** @class */ (function () {
         this._bullets.splice(0);
         this._inactive.splice(0);
         this._ship.destroy();
+        this._solidMatAsset = null;
     };
-    return default_1;
+    return ShotGame;
 }());
-exports.default = default_1;
+exports.ShotGame = ShotGame;
+exports.default = ShotGame;
 //# sourceMappingURL=shot_game.js.map

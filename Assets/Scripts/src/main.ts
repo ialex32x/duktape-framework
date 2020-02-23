@@ -1,6 +1,7 @@
 import { MyBridge } from "./app";
 
 enableStacktrace(true);
+debugger;
 console.log("hello, world!");
 
 (function () {

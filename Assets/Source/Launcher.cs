@@ -9,7 +9,8 @@ namespace Duktape
 
     public class Launcher : MonoBehaviour, IDuktapeListener
     {
-        public bool debuggerSupport;
+        public bool debuggerSupport = true;
+        public bool waitForDebuggerAttack = false;
         public string scriptRootPath = "Assets/Scripts/out";
         public string entryScript = "main";
         public bool devMode = true;
@@ -30,8 +31,19 @@ namespace Duktape
             if (debuggerSupport)
             {
                 DuktapeDebugger.CreateDebugger(_vm);
+                if (waitForDebuggerAttack)
+                {
+                    Debug.LogWarning("waiting for debugger attach");
+                    DuktapeDebugger.onAttached += () =>
+                    {
+                        _vm.EvalMain(entryScript);
+                    };
+                }
             }
-            _vm.EvalMain(entryScript);
+            else
+            {
+                _vm.EvalMain(entryScript);
+            }
         }
 
         void Awake()

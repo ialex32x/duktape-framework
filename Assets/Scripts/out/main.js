@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var app_1 = require("./app");
 enableStacktrace(true);
+debugger;
 console.log("hello, world!");
 (function () {
     var go = new UnityEngine.GameObject("_jsgo");

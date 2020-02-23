@@ -133,6 +133,16 @@ namespace Duktape
                     "GetComponentsInParent", typeof(Type))
             ;
 
+            var buildTarget = EditorUserBuildSettings.activeBuildTarget;
+            if (buildTarget != BuildTarget.iOS)
+            {
+                typePrefixBlacklist.Add("UnityEngine.Apple");
+            }
+            if (buildTarget != BuildTarget.Android)
+            {
+                typePrefixBlacklist.Add("UnityEngine.Android");
+            }
+
             // fix d.ts, some C# classes use explicit implemented interface method
             SetTypeBlocked(typeof(UnityEngine.ILogHandler));
             SetTypeBlocked(typeof(UnityEngine.ISerializationCallbackReceiver));
@@ -170,6 +180,8 @@ namespace Duktape
 
             TransformType(typeof(Quaternion))
                 .AddTSMethodDeclaration("Clone(): Quaternion")
+                .AddTSMethodDeclaration("static Mul(lhs: Quaternion, rhs: Vector3): Vector3")
+                .AddTSMethodDeclaration("static Mul(lhs: Quaternion, rhs: Quaternion): Quaternion")
             ;
             // SetTypeBlocked(typeof(RendererExtensions));
             SetTypeBlocked(typeof(UnityEngine.UI.ILayoutGroup));
@@ -180,6 +192,14 @@ namespace Duktape
                 .SetMemberBlocked("ModifyMesh");
             TransformType(typeof(UnityEngine.UI.Outline))
                 .SetMemberBlocked("ModifyMesh");
+            TransformType(typeof(UnityEngine.UI.Graphic))
+                .SetMemberBlocked("OnRebuildRequested");
+            TransformType(typeof(UnityEngine.UI.Text))
+                .SetMemberBlocked("OnRebuildRequested");
+            TransformType(typeof(UnityEngine.Input))
+                .SetMemberBlocked("IsJoystickPreconfigured");
+            TransformType(typeof(UnityEngine.MonoBehaviour))
+                .SetMemberBlocked("runInEditMode");
 
             // editor 使用的 .net 与 player 所用存在差异, 这里屏蔽不存在的成员
             TransformType(typeof(double))
@@ -216,6 +236,16 @@ namespace Duktape
             AddTSTypeNameMap(typeof(Vector4), "UnityEngine.Vector4");
             AddTSTypeNameMap(typeof(Quaternion), "UnityEngine.Quaternion");
             AddTSTypeNameMap(typeof(DuktapeArray), "any[]");
+            AddTSTypeNameMap(typeof(IO.ByteBuffer), "DuktapeJS.ByteBuffer", "Buffer");
+
+            TransformType(typeof(IO.ByteBuffer))
+                .Rename("DuktapeJS.ByteBuffer")
+                .SetMemberBlocked("_SetPosition")
+                .SetMethodBlocked("ReadAllBytes", typeof(IntPtr))
+                .SetMethodBlocked("WriteBytes", typeof(IntPtr), typeof(int));
+
+            AddExportedType(typeof(DuktapeBridge));
+            AddExportedType(typeof(IO.ByteBuffer));
 
             AddCSTypeNameMap(typeof(sbyte), "sbyte");
             AddCSTypeNameMap(typeof(byte), "byte");
@@ -609,57 +639,71 @@ namespace Duktape
         public string GetDuktapeGetter(Type type, string ctx, string index, string varname)
         {
             #region [临时做法] 并且是可选的优化, 可以避免一层函数调用
-            if (type == typeof(bool))
-            {
-                return $"{varname} = DuktapeDLL.duk_get_boolean({ctx}, {index});";
-            }
             if (type == typeof(string))
             {
                 return $"{varname} = DuktapeDLL.duk_get_string({ctx}, {index});";
             }
-            if (type == typeof(byte))
+            if (type.IsValueType)
             {
-                return $"{varname} = (byte)DuktapeDLL.duk_get_int({ctx}, {index});";
-            }
-            if (type == typeof(char))
-            {
-                return $"{varname} = (char)DuktapeDLL.duk_get_int({ctx}, {index});";
-            }
-            if (type == typeof(sbyte))
-            {
-                return $"{varname} = (sbyte)DuktapeDLL.duk_get_int({ctx}, {index});";
-            }
-            if (type == typeof(short))
-            {
-                return $"{varname} = (short)DuktapeDLL.duk_get_int({ctx}, {index});";
-            }
-            if (type == typeof(ushort))
-            {
-                return $"{varname} = (ushort)DuktapeDLL.duk_get_int({ctx}, {index});";
-            }
-            if (type == typeof(int))
-            {
-                return $"{varname} = DuktapeDLL.duk_get_int({ctx}, {index});";
-            }
-            if (type == typeof(uint))
-            {
-                return $"{varname} = DuktapeDLL.duk_get_uint({ctx}, {index});";
-            }
-            if (type == typeof(long))
-            {
-                return $"{varname} = (long)DuktapeDLL.duk_get_number({ctx}, {index});";
-            }
-            if (type == typeof(ulong))
-            {
-                return $"{varname} = (ulong)DuktapeDLL.duk_get_number({ctx}, {index});";
-            }
-            if (type == typeof(float))
-            {
-                return $"{varname} = (float)DuktapeDLL.duk_get_number({ctx}, {index});";
-            }
-            if (type == typeof(double))
-            {
-                return $"{varname} = DuktapeDLL.duk_get_number({ctx}, {index});";
+                if (type.IsPrimitive)
+                {
+                    if (type == typeof(bool))
+                    {
+                        return $"{varname} = DuktapeDLL.duk_get_boolean({ctx}, {index});";
+                    }
+                    if (type == typeof(byte))
+                    {
+                        return $"{varname} = (byte)DuktapeDLL.duk_get_int({ctx}, {index});";
+                    }
+                    if (type == typeof(char))
+                    {
+                        return $"{varname} = (char)DuktapeDLL.duk_get_int({ctx}, {index});";
+                    }
+                    if (type == typeof(sbyte))
+                    {
+                        return $"{varname} = (sbyte)DuktapeDLL.duk_get_int({ctx}, {index});";
+                    }
+                    if (type == typeof(short))
+                    {
+                        return $"{varname} = (short)DuktapeDLL.duk_get_int({ctx}, {index});";
+                    }
+                    if (type == typeof(ushort))
+                    {
+                        return $"{varname} = (ushort)DuktapeDLL.duk_get_int({ctx}, {index});";
+                    }
+                    if (type == typeof(int))
+                    {
+                        return $"{varname} = DuktapeDLL.duk_get_int({ctx}, {index});";
+                    }
+                    if (type == typeof(uint))
+                    {
+                        return $"{varname} = DuktapeDLL.duk_get_uint({ctx}, {index});";
+                    }
+                    if (type == typeof(long))
+                    {
+                        return $"{varname} = (long)DuktapeDLL.duk_get_number({ctx}, {index});";
+                    }
+                    if (type == typeof(ulong))
+                    {
+                        return $"{varname} = (ulong)DuktapeDLL.duk_get_number({ctx}, {index});";
+                    }
+                    if (type == typeof(float))
+                    {
+                        return $"{varname} = (float)DuktapeDLL.duk_get_number({ctx}, {index});";
+                    }
+                    if (type == typeof(double))
+                    {
+                        return $"{varname} = DuktapeDLL.duk_get_number({ctx}, {index});";
+                    }
+                }
+                if (type.IsEnum)
+                {
+                    if (type.GetEnumUnderlyingType() == typeof(int))
+                    {
+                        var typeStr = this.GetCSTypeFullName(type);
+                        return $"{varname} = ({typeStr})DuktapeDLL.duk_get_int({ctx}, {index});";
+                    }
+                }
             }
             #endregion 
             var getter = GetDuktapeGetter(type);
@@ -1245,7 +1289,6 @@ namespace Duktape
             AddExportedType(typeof(Array));
             AddExportedType(typeof(Object));
             AddExportedType(typeof(Vector3));
-            AddExportedType(typeof(DuktapeBridge));
         }
 
         // implicitExport: 默认进行导出(黑名单例外), 否则根据导出标记或手工添加
@@ -1305,20 +1348,23 @@ namespace Duktape
             {
                 var outDir = kv.Key;
                 var excludedFiles = kv.Value;
-                foreach (var file in Directory.GetFiles(outDir))
+                if (Directory.Exists(outDir))
                 {
-                    var nfile = file;
-                    if (file.EndsWith(".meta"))
+                    foreach (var file in Directory.GetFiles(outDir))
                     {
-                        nfile = file.Substring(0, file.Length - 5);
-                    }
-                    // Debug.LogFormat("checking file {0}", nfile);
-                    if (excludedFiles == null || !excludedFiles.Contains(nfile))
-                    {
-                        File.Delete(file);
-                        if (ondelete != null)
+                        var nfile = file;
+                        if (file.EndsWith(".meta"))
                         {
-                            ondelete(file);
+                            nfile = file.Substring(0, file.Length - 5);
+                        }
+                        // Debug.LogFormat("checking file {0}", nfile);
+                        if (excludedFiles == null || !excludedFiles.Contains(nfile))
+                        {
+                            File.Delete(file);
+                            if (ondelete != null)
+                            {
+                                ondelete(file);
+                            }
                         }
                     }
                 }
@@ -1335,13 +1381,15 @@ namespace Duktape
             list.Add(filename);
         }
 
-        public void Generate()
+        public void Generate(bool bTSDefinitionFiles)
         {
             var cg = new CodeGenerator(this);
-            var csOutDir = prefs.outDir;
-            var tsOutDir = prefs.typescriptDir;
+            var csOutDir = prefs.procOutDir;
+            var tsOutDir = prefs.procTypescriptDir;
             var tx = prefs.extraExt;
             // var tx = "";
+
+            cg.tsDeclare.enabled = bTSDefinitionFiles;
             if (!Directory.Exists(csOutDir))
             {
                 Directory.CreateDirectory(csOutDir);
@@ -1393,7 +1441,6 @@ namespace Duktape
 
                     cg.Clear();
                     cg.Generate(exportedDelegatesArray);
-                    // cg.tsSource.enabled = false;
                     cg.WriteTo(csOutDir, tsOutDir, DuktapeVM._DuktapeDelegates, tx);
                 }
                 catch (Exception exception)

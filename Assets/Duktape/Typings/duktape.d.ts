@@ -47,7 +47,7 @@ declare namespace Duktape {
     class Thread {
         /**	Thread constructor (function). */
         constructor(fn: Function);
-        static resume(thread: Thead, v?: any, f?: any);
+        static resume(thread: Thread, v?: any, f?: any);
         static yield(v?: any, f?: any);
         static current(): Thread;
     }
@@ -60,10 +60,10 @@ declare class CBOR {
     static decode(o: any): any;
 }
 
-declare class TextEncoder {
-    constructor();
-}
+// declare class TextEncoder {
+//     constructor();
+// }
 
-declare class TextDecoder {
-    constructor();
-}
+// declare class TextDecoder {
+//     constructor();
+// }

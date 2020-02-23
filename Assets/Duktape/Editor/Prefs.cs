@@ -21,6 +21,14 @@ namespace Duktape
         public string outDir = "Assets/Generated";
         public string typescriptDir = "Assets/Generated";
 
+        public List<string> cleanupDir = new List<string>(new string[]
+        {
+            "Assets/Generated",
+        });
+
+        public string procOutDir => ReplacePathVars(outDir);
+        public string procTypescriptDir => ReplacePathVars(typescriptDir);
+
         public string workspace = ".";
 
         // 尝试生成 Assembly 对应帮助内容
@@ -133,6 +141,27 @@ namespace Duktape
             var defaultPrefs = new Prefs();
             defaultPrefs._filePath = pathlist[0];
             return defaultPrefs;
+        }
+
+        private static string GetPlatform()
+        {
+            var buildTarget = EditorUserBuildSettings.activeBuildTarget;
+            switch (buildTarget)
+            {
+                case BuildTarget.Android: return "Android";
+                case BuildTarget.iOS: return "iOS";
+                case BuildTarget.StandaloneWindows:
+                case BuildTarget.StandaloneWindows64: return "Windows";
+                case BuildTarget.StandaloneOSX: return "OSX";
+                default: throw new NotSupportedException();
+            }
+        }
+
+        public static string ReplacePathVars(string value)
+        {
+            var platform = GetPlatform();
+            value = value.Replace("${platform}", platform);
+            return value;
         }
 
         public void Save()

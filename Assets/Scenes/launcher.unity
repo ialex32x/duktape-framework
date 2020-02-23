@@ -4904,6 +4904,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   debuggerSupport: 1
+  waitForDebuggerAttack: 1
   scriptRootPath: Assets/Scripts/out
   entryScript: main
   devMode: 1
